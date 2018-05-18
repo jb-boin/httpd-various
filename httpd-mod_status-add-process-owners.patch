@@ -1,0 +1,71 @@
+Adds a column with the owner of the processes on the server status page, also adds the PID of the process rendering the server-status and its owner
+Linux-specific patch
+--- modules/generators/mod_status.c	2016-12-02 12:43:55.000000000 +0100
++++ modules/generators/mod_status.c	2018-05-18 16:49:23.103372554 +0200
+@@ -405,7 +405,11 @@
+         ap_rvputs(r, ap_escape_html(r->pool, ap_get_server_name(r)),
+                   " (via ", r->connection->local_ip,
+                   ")</h1>\n\n", NULL);
+-        ap_rvputs(r, "<dl><dt>Server Version: ",
++        char *current_pid_owner = NULL;
++        apr_uid_name_get(&current_pid_owner, getuid(), r->pool);
++        ap_rvputs(r, "<dl><dt>Current process: ", apr_itoa(r->pool, getpid()), " (user ",
++                  current_pid_owner, ")</dt>\n", NULL);
++        ap_rvputs(r, "<dt>Server Version: ",
+                   ap_get_server_description(), "</dt>\n", NULL);
+         ap_rvputs(r, "<dt>Server MPM: ",
+                   ap_show_mpm(), "</dt>\n", NULL);
+@@ -678,7 +682,7 @@
+             ap_rputs("<hr /><h2>Server Details</h2>\n\n", r);
+         else
+             ap_rputs("\n\n<table border=\"0\"><tr>"
+-                     "<th>Srv</th><th>PID</th><th>Acc</th>"
++                     "<th>Srv</th><th>Owner</th><th>PID</th><th>Acc</th>"
+                      "<th>M</th>"
+ #ifdef HAVE_TIMES
+                      "<th>CPU\n</th>"
+@@ -811,20 +815,33 @@
+                                               ws_record->vhost));
+                 }
+                 else { /* !no_table_report */
+-                    if (ws_record->status == SERVER_DEAD)
++                    if (ws_record->status == SERVER_DEAD) {
+                         ap_rprintf(r,
+                                    "<tr><td><b>%d-%d</b></td><td>-</td><td>%d/%lu/%lu",
+                                    i, (int)worker_generation,
+                                    (int)conn_lres, my_lres, lres);
+-                    else
++                    } else {
++                        // Retrieval of the process owner (the owner of the folder /proc/$pid/task)
++                        apr_finfo_t worker_pid_infos;
++                        char *worker_pid_owner = NULL;
++                        if(apr_stat(&worker_pid_infos, apr_psprintf(r->pool, "/proc/%" APR_PID_T_FMT "/task", worker_pid), APR_FINFO_USER, r->pool) == APR_SUCCESS) {
++                            if(apr_uid_name_get(&worker_pid_owner, worker_pid_infos.user, r->pool) != APR_SUCCESS) {
++                                worker_pid_owner = "?";
++                            }
++                        } else {
++                            worker_pid_owner = "?";
++                        }
++
+                         ap_rprintf(r,
+-                                   "<tr><td><b>%d-%d</b></td><td>%"
++                                   "<tr><td><b>%d-%d</b></td><td>%s</td><td>%"
+                                    APR_PID_T_FMT
+                                    "</td><td>%d/%lu/%lu",
+                                    i, (int)worker_generation,
++                                   worker_pid_owner,
+                                    worker_pid,
+                                    (int)conn_lres,
+                                    my_lres, lres);
++                    }
+ 
+                     switch (ws_record->status) {
+                     case SERVER_READY:
+@@ -905,6 +922,7 @@
+ <hr /> \
+ <table>\n \
+ <tr><th>Srv</th><td>Child Server number - generation</td></tr>\n \
++<tr><th>Owner</th><td>Owner of the process</td></tr>\n \
+ <tr><th>PID</th><td>OS process ID</td></tr>\n \
+ <tr><th>Acc</th><td>Number of accesses this connection / this child / this slot</td></tr>\n \
+ <tr><th>M</th><td>Mode of operation</td></tr>\n"

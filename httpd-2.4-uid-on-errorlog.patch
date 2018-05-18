@@ -1,0 +1,13 @@
+--- server/log.c	2015-09-27 00:20:14.000000000 +0200
++++ server/log.c	2016-04-08 11:21:10.195496112 +0200
+@@ -930,6 +930,10 @@
+         buf[len++] = ' ';
+     }
+ 
++    // Adds the UID of the httpd process on the default error log format - useful when using mpm-itk or similar
++    len += apr_snprintf(buf + len, buflen - len,
++        "<%d> ", getuid());
++
+     if (!info->startup) {
+         buf[len++] = '[';
+         len += log_module_name(info, NULL, buf + len, buflen - len);

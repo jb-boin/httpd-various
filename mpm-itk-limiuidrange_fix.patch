@@ -1,0 +1,20 @@
+--- mpm_itk.c	2016-12-16 12:05:03.406886455 +0100
++++ mpm_itk.c	2016-12-16 14:27:08.530051034 +0100
+@@ -367,7 +367,16 @@
+      * (Those requests will almost certainly fail.)
+      */
+     if ((!err && !ap_has_irreversibly_setuid) || wanted_uid != getuid() || wanted_gid != getgid()) {
+-        if (setgid(wanted_gid)) {
++        if (wanted_gid < ap_itk_min_gid || wanted_gid > ap_itk_max_gid) {
++            // In case seccomp is not supported, the restrict_setuid_range() will not restrict setgid() and setuid() usage
++            ap_log_error(APLOG_MARK, APLOG_ERR, 0, NULL,
++                         "Wanted GID (%d) is not within the current LimitGIDRange range (%d to %d).", wanted_gid, ap_itk_min_gid, ap_itk_max_gid);
++            err = 1;
++        } else if (wanted_uid < ap_itk_min_uid || wanted_uid > ap_itk_max_uid) {
++            ap_log_error(APLOG_MARK, APLOG_ERR, 0, NULL,
++                         "Wanted UID (%d) is not within the current LimitUIDRange range (%d to %d).", wanted_uid, ap_itk_min_uid, ap_itk_max_uid);
++            err = 1;
++        } else if (setgid(wanted_gid)) {
+             _DBG("setgid(%d): %s", wanted_gid, strerror(errno));
+             if (wanted_gid < ap_itk_min_gid || wanted_gid > ap_itk_max_gid) {
+                 ap_log_error(APLOG_MARK, APLOG_NOTICE, 0, NULL,

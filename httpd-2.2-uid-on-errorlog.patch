@@ -1,0 +1,13 @@
+--- server/log.c	2009-05-21 19:31:52.000000000 +0200
++++ server/log.c	2016-03-17 13:52:09.028211261 +0100
+@@ -584,6 +584,10 @@
+     }
+ 
+     if ((level & APLOG_STARTUP) != APLOG_STARTUP) {
++        // PHPNET - Adds the UID of the httpd process on the error log - useful when using mpm-itk or similar
++        len += apr_snprintf(errstr + len, MAX_STRING_LEN - len,
++                            "<%d> ", getuid());
++
+         len += apr_snprintf(errstr + len, MAX_STRING_LEN - len,
+                             "[%s] ", priorities[level_and_mask].t_name);
+     }
