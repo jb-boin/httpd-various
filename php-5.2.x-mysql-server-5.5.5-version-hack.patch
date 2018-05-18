@@ -1,0 +1,44 @@
+--- ext/mysql/php_mysql.c	2010-08-21 18:19:30.000000000 +0200
++++ ext/mysql/php_mysql.c	2018-03-02 17:33:22.123313112 +0100
+@@ -994,7 +994,18 @@
+ 
+ 	ZEND_FETCH_RESOURCE2(mysql, php_mysql_conn *, mysql_link, id, "MySQL-Link", le_link, le_plink);
+ 
+-	RETURN_STRING((char *)mysql_get_server_info(&mysql->conn),1);
++	// If the server version is not 4.x or 5.x, it adds the prefix "5.5.5-" to avoir incompatibilities with old Joomla (function hasUTF() on mysql(i).php) and other scripts failing if the version is >5.x | Does the contrary of what libmariadbclient-c does
++	char *server_ver = (char *)mysql_get_server_info(&mysql->conn);
++
++	if(strncmp(server_ver, "5.", 2) != 0 && strncmp(server_ver, "4.", 2) != 0) {
++		// The version is >5.x : The value returned by the function is prefixed by "5.5.5-"
++		char server_ver_hacked[strlen(server_ver) + strlen("5.5.5-")];
++		sprintf(server_ver_hacked, "5.5.5-%s", server_ver);
++		RETURN_STRING(server_ver_hacked, 1);
++	} else {
++		// The version is already returned as 4.x or 5.x by the lib(mysql|mariadb)client : It is returned as is
++		RETURN_STRING(server_ver, 1);
++	}
+ }
+ /* }}} */
+ 
+--- ext/mysqli/mysqli_api.c	2010-04-21 14:52:24.000000000 +0200
++++ ext/mysqli/mysqli_api.c	2018-03-02 17:46:47.545332493 +0100
+@@ -1057,7 +1057,18 @@
+ 	}
+ 	MYSQLI_FETCH_RESOURCE(mysql, MY_MYSQL *, &mysql_link, "mysqli_link", MYSQLI_STATUS_VALID);
+ 
+-	RETURN_STRING((char *)mysql_get_server_info(mysql->mysql), 1);
++	// If the server version is not 4.x or 5.x, it adds the prefix "5.5.5-" to avoir incompatibilities with old Joomla (function hasUTF() on mysql(i).php) and other scripts failing if the version is >5.x | Does the contrary of what libmariadbclient-c does
++	char *server_ver = (char *)mysql_get_server_info(mysql->mysql);
++
++	if(strncmp(server_ver, "5.", 2) != 0 && strncmp(server_ver, "4.", 2) != 0) {
++		// The version is >5.x : The value returned by the function is prefixed by "5.5.5-"
++		char server_ver_hacked[strlen(server_ver) + strlen("5.5.5-")];
++		sprintf(server_ver_hacked, "5.5.5-%s", server_ver);
++		RETURN_STRING(server_ver_hacked, 1);
++	} else {
++		// The version is already returned as 4.x or 5.x by the lib(mysql|mariadb)client : It is returned as is
++		RETURN_STRING(server_ver, 1);
++	}
+ }
+ 
+ /* }}} */
