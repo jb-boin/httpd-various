@@ -1,7 +1,7 @@
 Adds a column with the owner of the processes on the server status page, also adds the PID of the process rendering the server-status and its owner
 Linux-specific patch
 --- modules/generators/mod_status.c	2016-12-02 12:43:55.000000000 +0100
-+++ modules/generators/mod_status.c	2018-05-18 16:49:23.103372554 +0200
++++ modules/generators/mod_status.c	2018-05-22 17:24:46.626087974 +0200
 @@ -405,7 +405,11 @@
          ap_rvputs(r, ap_escape_html(r->pool, ap_get_server_name(r)),
                    " (via ", r->connection->local_ip,
@@ -31,7 +31,8 @@ Linux-specific patch
 -                    if (ws_record->status == SERVER_DEAD)
 +                    if (ws_record->status == SERVER_DEAD) {
                          ap_rprintf(r,
-                                    "<tr><td><b>%d-%d</b></td><td>-</td><td>%d/%lu/%lu",
+-                                   "<tr><td><b>%d-%d</b></td><td>-</td><td>%d/%lu/%lu",
++                                   "<tr><td><b>%d-%d</b></td><td>-</td><td>-</td><td>%d/%lu/%lu",
                                     i, (int)worker_generation,
                                     (int)conn_lres, my_lres, lres);
 -                    else
