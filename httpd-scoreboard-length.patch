@@ -1,14 +1,14 @@
 Double the maximum length of the VHost and request on the scoreboard
---- ./include/scoreboard.h	2018-01-13 16:36:38.000000000 +0100
-+++ ./include/scoreboard.h	2018-05-28 14:19:48.979907525 +0200
+--- ./include/scoreboard.h	2018-10-23 15:19:19.739797626 +0200
++++ ./include/scoreboard.h	2018-10-23 15:20:56.973296088 +0200
 @@ -113,8 +113,8 @@
      struct tms times;
  #endif
-     char client[32];            /* Keep 'em small... */
+     char client[32];            /* DEPRECATED: Keep 'em small... */
 -    char request[64];           /* We just want an idea... */
 -    char vhost[32];             /* What virtual host is being accessed? */
 +    char request[128];           /* We just want an idea... */
 +    char vhost[64];             /* What virtual host is being accessed? */
      char protocol[16];          /* What protocol is used on the connection? */
- };
- 
+     apr_time_t duration;
+     char client64[64];
